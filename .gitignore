@@ -1,0 +1,15 @@
+__pycache__/
+artifacts/
+eval_results/
+coherence_results/
+eigenspectrum_results/
+patching_results/
+steering_results/
+ablation_resutls/
+hub/
+job*
+wandb/
+output/
+checkpoints*/
+.claude/
+*.json

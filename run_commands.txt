@@ -1,0 +1,93 @@
+############################################
+# ICML Polynomial SAE – Training + SAEBench Commands
+# All experiments use context_size=128 (Neuronpedia-style)
+############################################
+
+# One-time environment setup
+export WANDB_PROJECT="icml_polynomial_sae"
+export TOKENIZERS_PARALLELISM=false
+
+############################################
+# GPT-2 Small (124M) – Layer 8 – width 16k
+############################################
+
+# Vanilla TopK
+python train_and_saebench.py --exp gpt2_l8 --architecture topk \
+  --width 16k --k 64 --training_tokens 300000000 --context_size 128 \
+  --no_rescale_by_decoder_norm \
+  --checkpoint_path checkpoints/gpt2_l8_topk_16k \
+  --run_saebench --use_saelens_defaults
+
+# PolySAE TopK
+python train_and_saebench.py --exp gpt2_l8 --architecture topk \
+  --width 16k --k 64 --training_tokens 300000000 --context_size 128 \
+  --poly --no_rescale_by_decoder_norm \
+  --checkpoint_path checkpoints/gpt2_l8_topk_poly_16k \
+  --run_saebench --use_saelens_defaults
+
+
+############################################
+# Pythia-410M – Layer 15 – width 16k
+############################################
+
+# Vanilla TopK
+python train_and_saebench.py --exp pythia410m_l15 --architecture topk \
+  --width 16k --k 64 --training_tokens 500000000 --context_size 128 \
+  --no_rescale_by_decoder_norm \
+  --checkpoint_path checkpoints/pythia410m_l15_topk_16k \
+  --run_saebench --use_saelens_defaults
+
+# PolySAE TopK
+python train_and_saebench.py --exp pythia410m_l15 --architecture topk \
+  --width 16k --k 64 --training_tokens 500000000 --context_size 128 \
+  --poly --no_rescale_by_decoder_norm \
+  --checkpoint_path checkpoints/pythia410m_l15_topk_poly_16k \
+  --run_saebench --use_saelens_defaults
+
+
+############################################
+# Pythia-1.4B – Layer 12 – width 16k
+############################################
+
+# Vanilla TopK
+python train_and_saebench.py --exp pythia1_4b_l12 --architecture topk \
+  --width 16k --k 64 --training_tokens 500000000 --context_size 128 \
+  --no_rescale_by_decoder_norm \
+  --checkpoint_path checkpoints/pythia1_4b_l12_topk_16k \
+  --run_saebench --use_saelens_defaults
+
+# PolySAE TopK
+python train_and_saebench.py --exp pythia1_4b_l12 --architecture topk \
+  --width 16k --k 64 --training_tokens 500000000 --context_size 128 \
+  --poly --no_rescale_by_decoder_norm \
+  --checkpoint_path checkpoints/pythia1_4b_l12_topk_poly_16k \
+  --run_saebench --use_saelens_defaults
+
+
+############################################
+# Llama-3.2-3B – Layer 12 – width 16k
+############################################
+
+# Vanilla TopK
+python train_and_saebench.py --exp llama32_3b_l12 --architecture topk \
+  --width 16k --k 64 --training_tokens 500000000 --context_size 128 \
+  --no_rescale_by_decoder_norm --dtype bfloat16 \
+  --checkpoint_path checkpoints/llama32_3b_l12_topk_16k \
+  --run_saebench --use_saelens_defaults
+
+# PolySAE TopK
+python train_and_saebench.py --exp llama32_3b_l12 --architecture topk \
+  --width 16k --k 64 --training_tokens 500000000 --context_size 128 \
+  --poly --no_rescale_by_decoder_norm --dtype bfloat16 \
+  --checkpoint_path checkpoints/llama32_3b_l12_topk_poly_16k \
+  --run_saebench --use_saelens_defaults
+
+
+############################################
+# Notes
+############################################
+# - All use --context_size 128 (Neuronpedia-style, memory efficient)
+# - --no_rescale_by_decoder_norm: fair comparison between vanilla and poly
+# - --checkpoint_path: explicit paths prevent overwrites
+# - --run_saebench: runs SAEBench evaluations after training
+# - Llama uses --dtype bfloat16 to fit on 40GB GPUs
