@@ -176,7 +176,7 @@ python train_and_saebench.py --exp gemma2_2b_l19 --architecture batchtopk \
 #  --layer_masking 0.05 \
 #  --use_cross_fact --cross_fact_type TR --cross_fact_ranks 37,19,877 \
 
-# Llama was set up with a different dataset than Panayiotis preset.
+# Llama was set up with a different dataset 
 # LEFT DISABLED: $CKPT_ROOT/llama32-3b_m0_2_r34-15-667 does not exist —
 # this SAE was never trained (or its checkpoint was deleted). Nothing to eval.
 #RUN_NAME=llama32-3b_m0_2_r34-15-667

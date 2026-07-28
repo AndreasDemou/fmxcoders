@@ -1,23 +1,0 @@
-Loading crosscoder from /nvme/h/ademou/data_aiml/ademou/MN5/checkpoints/gemma2-2b_m0_05_r32-12-545/final_500002816
-/onyx/data/aiml/ademou/MN5/code/sae_lens/saes/sae.py:248: UserWarning: 
-This SAE has non-empty model_from_pretrained_kwargs. 
-For optimal performance, load the model like so:
-model = HookedSAETransformer.from_pretrained_no_processing(..., **cfg.model_from_pretrained_kwargs)
-  warnings.warn(
-model               : google/gemma-2-2b
-transformer_lens    : 2.16.1
-hook_names          : ['blocks.9.hook_resid_post', 'blocks.10.hook_resid_post', 'blocks.11.hook_resid_post', 'blocks.12.hook_resid_post', 'blocks.13.hook_resid_post', 'blocks.14.hook_resid_post', 'blocks.15.hook_resid_post', 'blocks.16.hook_resid_post']
-delta_mode          : increment
-injection spec(s)   : ['all_layers']
-steer_positions     : all
-coeffs (x a_ref)    : [0.5, 1.0, 2.0, 4.0, 8.0]
-latents / prompts   : 10 latents, 100 prompts
-Loading model...
-`torch_dtype` is deprecated! Use `dtype` instead!
-Loading checkpoint shards:   0%|          | 0/3 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 3/3 [00:00<00:00, 265.10it/s]
-  (offline) loaded tokenizer from local cache: /nvme/h/ademou/data_aiml/ademou/MN5/hf_cache/hub/models--google--gemma-2-2b/snapshots/c5ebcd40d208330abc697524c919956e692655cf
-Loading checkpoint shards:   0%|          | 0/3 [00:00<?, ?it/s]Loading checkpoint shards: 100%|██████████| 3/3 [00:00<00:00, 278.46it/s]
-Loaded pretrained model google/gemma-2-2b into HookedTransformer
-latents:   0%|          | 0/10 [00:00<?, ?it/s]latents:  10%|█         | 1/10 [00:46<07:01, 46.81s/it]latents:  20%|██        | 2/10 [01:33<06:13, 46.74s/it]latents:  30%|███       | 3/10 [02:20<05:26, 46.70s/it]latents:  40%|████      | 4/10 [03:06<04:40, 46.69s/it]latents:  50%|█████     | 5/10 [03:53<03:53, 46.65s/it]latents:  60%|██████    | 6/10 [04:39<03:06, 46.63s/it]latents:  70%|███████   | 7/10 [05:26<02:19, 46.65s/it]latents:  80%|████████  | 8/10 [06:13<01:33, 46.66s/it]latents:  90%|█████████ | 9/10 [06:59<00:46, 46.64s/it]latents: 100%|██████████| 10/10 [07:46<00:00, 46.65s/it]latents: 100%|██████████| 10/10 [07:46<00:00, 46.66s/it]
-
-Wrote steering_results/gemma2-2b_m0_05_r32-12-545/gen_all/steered_continuations.json and steering_results/gemma2-2b_m0_05_r32-12-545/gen_all/continuations.txt
