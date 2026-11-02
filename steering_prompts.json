@@ -1,0 +1,208 @@
+{
+  "run_name": "gemma2-2b_m0_05_r32-12-545",
+  "version": 2,
+  "purpose": "Next-token steering probes. Prompts are written to be OFF the target concept: they supply only an open syntactic slot, with no lexical or world-knowledge priming toward the feature. Any appearance of the concept in the continuation should therefore be attributable to the steering vector, not to the prompt.",
+  "design_principles": [
+    "NO lexical priming: the prompt must not contain the target word, a synonym, or a collocate that pulls the target in on its own (e.g. 'set the ___' for 'tone', 'sheer ___' for large quantity, 'in City,' for a country).",
+    "NO world-knowledge priming: the prompt must not describe a situation that makes the concept the obvious completion (e.g. 'Penicillin was ___' for the accidental-discovery latent, 'They hadn't spoken in years when ___' for the suddenness latent).",
+    "NO contamination from the max-activating examples: no prompt reuses phrasing or subject matter from the dataset examples that defined the latent.",
+    "The slot must be syntactically available but semantically unexpected: the baseline continuation should be mundane and clearly different from the steered one.",
+    "Each latent has 8 'neutral_slot' probes (concept is grammatical but unmotivated) and 2 'override' probes (concept is not licensed at all; used to test whether a strong coefficient forces it in regardless of context)."
+  ],
+  "revision_notes": [
+    "16167 rewritten completely: v1 named the city, so the country was already implied and the baseline model produced it unsteered. v2 contains no place names at all.",
+    "Contamination removed: v1 reused phrasing from the max-activating examples for 14298 ('Commander is a format of variety', chess search tree), 6879 ('flu jab... annoyance', 'Two names that appeared on the original patent'), 12380 ('Software does not just...'), 2043 (New Year gym crowd thinning in mid-February). These would have shown 'steering works' on prompts the feature was defined by.",
+    "Collocational giveaways removed: 'set the ___' (9050), 'broke it down into five ___' / 'in order, each ___' (854), 'there are ___' after 'so many' (14298), 'in order to' after 'changed the subject' (10081).",
+    "Explicit date anchors removed from 2043 and explicit 'once / used to / for decades' removed from 6879 — both were doing the feature's work for it.",
+    "Override probes added throughout so a null result on neutral slots can be distinguished from a weak vector."
+  ],
+  "usage_notes": [
+    "Do NOT append a trailing space: Gemma tokens carry their own leading space (e.g. ' stages'), so a trailing space splits the target token.",
+    "Score by probability mass moved onto the target token set, and by short greedy continuations (5-15 tokens), not by argmax alone.",
+    "MEASUREMENT CAVEAT for 16167: this feature fires on the country term inside an 'in City, COUNTRY,' apposition. Without naming a city there is no way for the country to be the immediate next token — so for this latent evaluate a 5-15 token continuation and check whether a location apposition appears at all, and whether it takes dateline form. Immediate-next-token scoring is not meaningful here unless you prime the city, which defeats the test.",
+    "Suggested control: run every prompt with an unrelated latent at the same coefficient, to confirm effects are direction-specific rather than a residual-norm artefact.",
+    "Suggested second control: run a coefficient sweep. Neutral_slot probes should show the concept before override probes do; if override probes flip first, the coefficient is in the degenerate regime."
+  ],
+  "latents": [
+    {
+      "latent_id": "854",
+      "label": "Stages / steps of a process",
+      "target_tokens": [" stages", " steps", " step", " process", " lifecycle", " flow", "cycle", " phases"],
+      "slot_design": "Bare noun after a determiner, in contexts that are not about procedures at all.",
+      "prompts": [
+        {"id": "854-01", "probe_type": "neutral_slot", "prompt": "Nobody warned me about the", "baseline_expectation": "cost / paperwork / noise", "steered_expectation": "stages / steps involved"},
+        {"id": "854-02", "probe_type": "neutral_slot", "prompt": "The tutorial was useless because it skipped the", "baseline_expectation": "basics / details / hard part", "steered_expectation": "steps / intermediate stages"},
+        {"id": "854-03", "probe_type": "neutral_slot", "prompt": "What surprised me most about the job was the", "baseline_expectation": "hours / pay / people", "steered_expectation": "process / number of steps"},
+        {"id": "854-04", "probe_type": "neutral_slot", "prompt": "Halfway through I realised I had misunderstood the", "baseline_expectation": "question / instructions / point", "steered_expectation": "order of the steps / process"},
+        {"id": "854-05", "probe_type": "neutral_slot", "prompt": "She kept a small notebook in which she recorded the", "baseline_expectation": "weather / names / dates", "steered_expectation": "stages / each step"},
+        {"id": "854-06", "probe_type": "neutral_slot", "prompt": "The consultant charged four thousand pounds and delivered one page describing the", "baseline_expectation": "problem / situation / findings", "steered_expectation": "process / workflow"},
+        {"id": "854-07", "probe_type": "neutral_slot", "prompt": "Everyone underestimates the", "baseline_expectation": "cost / difficulty / time", "steered_expectation": "number of stages / steps"},
+        {"id": "854-08", "probe_type": "neutral_slot", "prompt": "His entire talk was about the", "baseline_expectation": "future / risks / money", "steered_expectation": "lifecycle / process"},
+        {"id": "854-09", "probe_type": "override", "prompt": "The soup needs a bit more", "baseline_expectation": "salt", "steered_expectation": "intrusion of 'stages' / 'steps' despite the mass-noun context"},
+        {"id": "854-10", "probe_type": "override", "prompt": "My favourite thing about autumn is the", "baseline_expectation": "colours / light / smell", "steered_expectation": "'stages' / 'cycle' forced into an aesthetic slot"}
+      ]
+    },
+    {
+      "latent_id": "16167",
+      "label": "Country / state name in an institutional dateline",
+      "target_tokens": [" Norway", " Germany", " Netherlands", " Sweden", " Japan", " Canada", " Switzerland", " Portugal", " Massachusetts", " Vermont"],
+      "slot_design": "Institution or person plus an appositive comma, or a bare locative preposition, with ZERO geography anywhere in the prompt. Steering must supply the whole 'in City, Country,' apposition, so evaluate over a short continuation rather than a single token.",
+      "prompts": [
+        {"id": "16167-01", "probe_type": "neutral_slot", "prompt": "Dr. Amara Nwosu, who runs the computational biology unit at the children's hospital,", "baseline_expectation": "said / has argued / believes", "steered_expectation": "in <City>, <Country>, said ..."},
+        {"id": "16167-02", "probe_type": "neutral_slot", "prompt": "The senior author is based at a mid-sized teaching hospital in", "baseline_expectation": "the north of the country / the city", "steered_expectation": "<City>, <Country>"},
+        {"id": "16167-03", "probe_type": "neutral_slot", "prompt": "The measurements were repeated at a second facility, this one in", "baseline_expectation": "the same building / a different climate", "steered_expectation": "<City>, <Country>"},
+        {"id": "16167-04", "probe_type": "neutral_slot", "prompt": "Professor Lindqvist, who has spent eleven years at the same marine institute,", "baseline_expectation": "said / disagrees / has never", "steered_expectation": "in <City>, <Country>, said ..."},
+        {"id": "16167-05", "probe_type": "neutral_slot", "prompt": "The samples were couriered overnight to a genetics laboratory in", "baseline_expectation": "the capital / another hospital", "steered_expectation": "<City>, <Country>"},
+        {"id": "16167-06", "probe_type": "neutral_slot", "prompt": "Her co-author, an atmospheric chemist,", "baseline_expectation": "agrees / was not available / says", "steered_expectation": "at the university in <City>, <Country>, ..."},
+        {"id": "16167-07", "probe_type": "neutral_slot", "prompt": "The instrument was built by a team of four engineers at an observatory in", "baseline_expectation": "the mountains / the desert", "steered_expectation": "<City>, <Country>"},
+        {"id": "16167-08", "probe_type": "neutral_slot", "prompt": "After her postdoc she took a faculty position at a technical university in", "baseline_expectation": "her home town / the north", "steered_expectation": "<City>, <Country>"},
+        {"id": "16167-09", "probe_type": "override", "prompt": "He spent the whole summer working in", "baseline_expectation": "a bar / the garden / his uncle's shop", "steered_expectation": "a country or dateline apposition intruding on a job description"},
+        {"id": "16167-10", "probe_type": "override", "prompt": "The parcel had been sitting unopened in", "baseline_expectation": "the hallway / a cupboard", "steered_expectation": "a place-name apposition where a room is expected"}
+      ]
+    },
+    {
+      "latent_id": "15726",
+      "label": "Accidental / unintentional",
+      "target_tokens": [" accidentally", " inadvertently", " accidental", " accident", " unintentionally"],
+      "slot_design": "Pre-verbal adverb position in mundane contexts with no mishap framing. Nothing in the prompt suggests anything went wrong.",
+      "prompts": [
+        {"id": "15726-01", "probe_type": "neutral_slot", "prompt": "During the demo on Thursday afternoon, she", "baseline_expectation": "showed / walked through / explained", "steered_expectation": "accidentally ..."},
+        {"id": "15726-02", "probe_type": "neutral_slot", "prompt": "Halfway through the afternoon the technician", "baseline_expectation": "left / called / checked", "steered_expectation": "inadvertently ..."},
+        {"id": "15726-03", "probe_type": "neutral_slot", "prompt": "He opened the top drawer and", "baseline_expectation": "took out / found / pulled", "steered_expectation": "accidentally ..."},
+        {"id": "15726-04", "probe_type": "neutral_slot", "prompt": "Over the weekend the two students", "baseline_expectation": "finished / met / went", "steered_expectation": "accidentally discovered ..."},
+        {"id": "15726-05", "probe_type": "neutral_slot", "prompt": "While the kettle boiled, he", "baseline_expectation": "checked his phone / stared out", "steered_expectation": "accidentally ..."},
+        {"id": "15726-06", "probe_type": "neutral_slot", "prompt": "The committee met for two hours and", "baseline_expectation": "agreed / adjourned / voted", "steered_expectation": "inadvertently approved ..."},
+        {"id": "15726-07", "probe_type": "neutral_slot", "prompt": "She was halfway through the recipe when she", "baseline_expectation": "realised / stopped / remembered", "steered_expectation": "accidentally added ..."},
+        {"id": "15726-08", "probe_type": "neutral_slot", "prompt": "On his first morning the new caretaker", "baseline_expectation": "swept / unlocked / met", "steered_expectation": "accidentally ..."},
+        {"id": "15726-09", "probe_type": "override", "prompt": "The capital of Portugal is", "baseline_expectation": "Lisbon", "steered_expectation": "'accidentally' intruding into a factual completion"},
+        {"id": "15726-10", "probe_type": "override", "prompt": "My favourite colour is", "baseline_expectation": "blue / green", "steered_expectation": "'accidental' forced into a predicate-adjective slot"}
+      ]
+    },
+    {
+      "latent_id": "9084",
+      "label": "The proper name 'Taylor'",
+      "target_tokens": [" Taylor", "Taylor"],
+      "slot_design": "Open surname slots in domains where Taylor is not especially likely. Deliberately avoids cycling, New Jersey food and pop music, all of which appear in or near the max-activating examples.",
+      "prompts": [
+        {"id": "9084-01", "probe_type": "neutral_slot", "prompt": "The letter was signed at the bottom, simply:", "baseline_expectation": "Yours sincerely / a first name", "steered_expectation": "Taylor"},
+        {"id": "9084-02", "probe_type": "neutral_slot", "prompt": "The estate agent introduced us to the landlord, a Mr.", "baseline_expectation": "Khan / Smith / Novak", "steered_expectation": "Taylor"},
+        {"id": "9084-03", "probe_type": "neutral_slot", "prompt": "In the closing credits the location manager is listed as Elena", "baseline_expectation": "Ramirez / Kowalski / Fisher", "steered_expectation": "Taylor"},
+        {"id": "9084-04", "probe_type": "neutral_slot", "prompt": "The street is named after a nineteenth-century mill owner named", "baseline_expectation": "Josiah / Ashworth / Whitfield", "steered_expectation": "Taylor"},
+        {"id": "9084-05", "probe_type": "neutral_slot", "prompt": "He scrolled down the class register and stopped on", "baseline_expectation": "the third name / Patel", "steered_expectation": "Taylor"},
+        {"id": "9084-06", "probe_type": "neutral_slot", "prompt": "The receptionist asked who the appointment was with, and he said Dr.", "baseline_expectation": "Ahmed / Reid / Kaur", "steered_expectation": "Taylor"},
+        {"id": "9084-07", "probe_type": "neutral_slot", "prompt": "Two of the three witnesses gave the same surname:", "baseline_expectation": "Nowak / Murphy / Bennett", "steered_expectation": "Taylor"},
+        {"id": "9084-08", "probe_type": "neutral_slot", "prompt": "My upstairs neighbour, whose first name I never learned, everyone just calls", "baseline_expectation": "Doc / the Colonel / Mrs. B", "steered_expectation": "Taylor"},
+        {"id": "9084-09", "probe_type": "override", "prompt": "The largest planet in the solar system is", "baseline_expectation": "Jupiter", "steered_expectation": "'Taylor' overriding a factual completion"},
+        {"id": "9084-10", "probe_type": "override", "prompt": "At sea level, water boils at one hundred degrees", "baseline_expectation": "Celsius", "steered_expectation": "'Taylor' overriding a factual completion"}
+      ]
+    },
+    {
+      "latent_id": "9050",
+      "label": "The word 'tone'",
+      "target_tokens": [" tone"],
+      "slot_design": "Open noun slots deliberately placed outside the writing/voice/register semantic field, so nothing in the prompt makes 'tone' plausible. The collocation 'set the ___' from v1 has been removed.",
+      "prompts": [
+        {"id": "9050-01", "probe_type": "neutral_slot", "prompt": "The mechanic said the real problem was the", "baseline_expectation": "gearbox / clutch / wiring", "steered_expectation": "tone"},
+        {"id": "9050-02", "probe_type": "neutral_slot", "prompt": "The first thing the surveyor commented on was the", "baseline_expectation": "damp / roof / brickwork", "steered_expectation": "tone"},
+        {"id": "9050-03", "probe_type": "neutral_slot", "prompt": "What I remember most about that house is the", "baseline_expectation": "smell / garden / cold", "steered_expectation": "tone"},
+        {"id": "9050-04", "probe_type": "neutral_slot", "prompt": "Everyone in the office immediately noticed the", "baseline_expectation": "new chairs / the silence", "steered_expectation": "tone"},
+        {"id": "9050-05", "probe_type": "neutral_slot", "prompt": "The review complained about almost everything except the", "baseline_expectation": "food / lighting / price", "steered_expectation": "tone"},
+        {"id": "9050-06", "probe_type": "neutral_slot", "prompt": "Nearly half the budget went on the", "baseline_expectation": "building / scaffolding / consultants", "steered_expectation": "tone"},
+        {"id": "9050-07", "probe_type": "neutral_slot", "prompt": "She changed exactly one thing before sending it: the", "baseline_expectation": "subject line / attachment / date", "steered_expectation": "tone"},
+        {"id": "9050-08", "probe_type": "neutral_slot", "prompt": "The feedback form had a single box asking about the", "baseline_expectation": "service / waiting time / staff", "steered_expectation": "tone"},
+        {"id": "9050-09", "probe_type": "override", "prompt": "The recipe calls for two cups of", "baseline_expectation": "flour / water", "steered_expectation": "'tone' forced into a mass-noun ingredient slot"},
+        {"id": "9050-10", "probe_type": "override", "prompt": "Please remember to bring your", "baseline_expectation": "passport / umbrella / ID", "steered_expectation": "'tone' forced into a possessed-object slot"}
+      ]
+    },
+    {
+      "latent_id": "12380",
+      "label": "Suddenness / without warning",
+      "target_tokens": [" nowhere", " blue", " warning", " moment", " air", " spontaneous", " spontaneously", " notice"],
+      "slot_design": "Optional adverbial position after an ordinary, entirely expected event. No long silences, no surprise framing, none of the phrasing from the max-activating examples.",
+      "prompts": [
+        {"id": "12380-01", "probe_type": "neutral_slot", "prompt": "The parcel arrived", "baseline_expectation": "on Tuesday / this morning / damaged", "steered_expectation": "out of the blue / with no warning"},
+        {"id": "12380-02", "probe_type": "neutral_slot", "prompt": "He changed jobs", "baseline_expectation": "last year / twice / again", "steered_expectation": "out of nowhere"},
+        {"id": "12380-03", "probe_type": "neutral_slot", "prompt": "The shop put its prices up", "baseline_expectation": "again / in January / by ten percent", "steered_expectation": "overnight, without warning"},
+        {"id": "12380-04", "probe_type": "neutral_slot", "prompt": "She started learning Greek", "baseline_expectation": "last spring / at evening class", "steered_expectation": "on a whim / out of nowhere"},
+        {"id": "12380-05", "probe_type": "neutral_slot", "prompt": "The pipes started making that noise", "baseline_expectation": "again / last night", "steered_expectation": "out of nowhere / with no warning"},
+        {"id": "12380-06", "probe_type": "neutral_slot", "prompt": "They decided to move house", "baseline_expectation": "in June / after the baby", "steered_expectation": "on the spur of the moment"},
+        {"id": "12380-07", "probe_type": "neutral_slot", "prompt": "The committee reversed its decision", "baseline_expectation": "on Friday / unanimously", "steered_expectation": "without warning"},
+        {"id": "12380-08", "probe_type": "neutral_slot", "prompt": "My phone rang", "baseline_expectation": "again / at six / twice", "steered_expectation": "out of the blue"},
+        {"id": "12380-09", "probe_type": "override", "prompt": "The recipe takes about forty", "baseline_expectation": "minutes", "steered_expectation": "'nowhere' / 'warning' intruding into a duration slot"},
+        {"id": "12380-10", "probe_type": "override", "prompt": "The capital of Norway is", "baseline_expectation": "Oslo", "steered_expectation": "suddenness idiom overriding a factual completion"}
+      ]
+    },
+    {
+      "latent_id": "14298",
+      "label": "Vast number of available options",
+      "target_tokens": [" thousands", " hundreds", " dozens", " number", " large", " infinite", " available", " possible", " pool"],
+      "slot_design": "Object slots after a plain transitive verb, where a small or vague quantity is the natural completion. All quantity language ('so many', 'sheer') removed, and the chess and Commander examples from v1 deleted as dataset contamination.",
+      "prompts": [
+        {"id": "14298-01", "probe_type": "neutral_slot", "prompt": "The shop on the corner stocks", "baseline_expectation": "milk and newspapers / the basics", "steered_expectation": "hundreds of / thousands of"},
+        {"id": "14298-02", "probe_type": "neutral_slot", "prompt": "Her flat is tiny, but she owns", "baseline_expectation": "a piano / very little", "steered_expectation": "thousands of books"},
+        {"id": "14298-03", "probe_type": "neutral_slot", "prompt": "The museum keeps in its basement", "baseline_expectation": "the archives / a boiler", "steered_expectation": "thousands of objects"},
+        {"id": "14298-04", "probe_type": "neutral_slot", "prompt": "By the end of the week he had received", "baseline_expectation": "a reply / no answer / two offers", "steered_expectation": "hundreds of emails"},
+        {"id": "14298-05", "probe_type": "neutral_slot", "prompt": "At its last meeting the council approved", "baseline_expectation": "the plans / the budget", "steered_expectation": "dozens of applications"},
+        {"id": "14298-06", "probe_type": "neutral_slot", "prompt": "Since it launched in March the site has collected", "baseline_expectation": "data / feedback / dust", "steered_expectation": "thousands of submissions"},
+        {"id": "14298-07", "probe_type": "neutral_slot", "prompt": "Under the floorboards they found", "baseline_expectation": "a box / a newspaper / damp", "steered_expectation": "hundreds of / thousands of"},
+        {"id": "14298-08", "probe_type": "neutral_slot", "prompt": "The old man on the allotment keeps", "baseline_expectation": "chickens / bees / to himself", "steered_expectation": "hundreds of varieties"},
+        {"id": "14298-09", "probe_type": "override", "prompt": "The train from Leeds was", "baseline_expectation": "late / cancelled / full", "steered_expectation": "quantity language forced into a predicate-adjective slot"},
+        {"id": "14298-10", "probe_type": "override", "prompt": "Her youngest brother is called", "baseline_expectation": "Sam / Daniel", "steered_expectation": "'thousands' / 'infinite' overriding a name slot"}
+      ]
+    },
+    {
+      "latent_id": "10081",
+      "label": "Concealment / covering up",
+      "target_tokens": [" disguise", " hide", " conceal", " obscure", " masking", " cover", " deflect", " gloss", " up", " over"],
+      "slot_design": "Purposive infinitive slots with benign, cooperative motives. Nothing in the prompt is secretive, and the physical 'covering' contexts from v1 (paint, curtains, hedge) are gone because they made 'hide' a natural baseline.",
+      "prompts": [
+        {"id": "10081-01", "probe_type": "neutral_slot", "prompt": "The new packaging was designed to", "baseline_expectation": "stand out / use less plastic", "steered_expectation": "disguise / obscure"},
+        {"id": "10081-02", "probe_type": "neutral_slot", "prompt": "He took the longer route home in order to", "baseline_expectation": "avoid the traffic / clear his head", "steered_expectation": "cover his tracks / hide"},
+        {"id": "10081-03", "probe_type": "neutral_slot", "prompt": "The company opened a second office to", "baseline_expectation": "expand / be closer to clients", "steered_expectation": "obscure / mask"},
+        {"id": "10081-04", "probe_type": "neutral_slot", "prompt": "She set her alarm an hour early to", "baseline_expectation": "beat the traffic / go running", "steered_expectation": "conceal / hide"},
+        {"id": "10081-05", "probe_type": "neutral_slot", "prompt": "The council widened the pavement to", "baseline_expectation": "improve access / slow cars down", "steered_expectation": "disguise / gloss over"},
+        {"id": "10081-06", "probe_type": "neutral_slot", "prompt": "They rewrote the opening chapter to", "baseline_expectation": "make it clearer / speed it up", "steered_expectation": "obscure / conceal"},
+        {"id": "10081-07", "probe_type": "neutral_slot", "prompt": "He joined the walking group mainly to", "baseline_expectation": "meet people / get outdoors", "steered_expectation": "hide / deflect attention from"},
+        {"id": "10081-08", "probe_type": "neutral_slot", "prompt": "The library extended its opening hours to", "baseline_expectation": "help students / meet demand", "steered_expectation": "mask / cover up"},
+        {"id": "10081-09", "probe_type": "override", "prompt": "The kettle takes about three", "baseline_expectation": "minutes", "steered_expectation": "concealment verb intruding into a duration slot"},
+        {"id": "10081-10", "probe_type": "override", "prompt": "Nine times seven is", "baseline_expectation": "sixty-three", "steered_expectation": "concealment verb overriding an arithmetic completion"}
+      ]
+    },
+    {
+      "latent_id": "2043",
+      "label": "Elapsed time relative to an event",
+      "target_tokens": [" after", " before", " around", " in", " at", " mid", " weeks", " Week"],
+      "slot_design": "Two-clause sentences ending on the second verb, where a temporal-distance phrase is grammatical but unnecessary. All explicit start dates from v1 are gone, since naming a month already invited a temporal continuation. The mid-February gym example was dataset contamination and has been removed.",
+      "prompts": [
+        {"id": "2043-01", "probe_type": "neutral_slot", "prompt": "He joined the choir and left", "baseline_expectation": "again / without explanation / the room", "steered_expectation": "after three rehearsals"},
+        {"id": "2043-02", "probe_type": "neutral_slot", "prompt": "She signed up for the pottery class and stopped going", "baseline_expectation": "altogether / entirely", "steered_expectation": "after two weeks / before the second term"},
+        {"id": "2043-03", "probe_type": "neutral_slot", "prompt": "They opened the restaurant and closed it", "baseline_expectation": "for good / again / down", "steered_expectation": "eight months later / before winter"},
+        {"id": "2043-04", "probe_type": "neutral_slot", "prompt": "He bought the guitar and sold it", "baseline_expectation": "on / again / at a loss", "steered_expectation": "a fortnight later / after two lessons"},
+        {"id": "2043-05", "probe_type": "neutral_slot", "prompt": "The manager was appointed and sacked", "baseline_expectation": "again / by the same board", "steered_expectation": "before the end of the season"},
+        {"id": "2043-06", "probe_type": "neutral_slot", "prompt": "I started the book and gave up", "baseline_expectation": "on it / halfway", "steered_expectation": "after forty pages / after a week"},
+        {"id": "2043-07", "probe_type": "neutral_slot", "prompt": "The kitten was adopted and returned", "baseline_expectation": "to the shelter / twice", "steered_expectation": "within days / after a fortnight"},
+        {"id": "2043-08", "probe_type": "neutral_slot", "prompt": "She took up running and injured herself", "baseline_expectation": "again / badly", "steered_expectation": "after a fortnight / in her first week"},
+        {"id": "2043-09", "probe_type": "override", "prompt": "The capital of Denmark is", "baseline_expectation": "Copenhagen", "steered_expectation": "temporal preposition overriding a factual completion"},
+        {"id": "2043-10", "probe_type": "override", "prompt": "His favourite colour has always been", "baseline_expectation": "green / blue", "steered_expectation": "'after' / 'mid' forced into a colour slot"}
+      ]
+    },
+    {
+      "latent_id": "6879",
+      "label": "The 'once X, now Y' pivot",
+      "target_tokens": [" now", " is", " was", " are", " became", " replaced", " appear", " can"],
+      "slot_design": "A subject noun phrase carrying an implicit past, stopping exactly at the main verb. The words 'once', 'used to' and 'for decades' are deliberately absent, since in v1 they were setting up the pivot themselves. The flu-shot and patent prompts were verbatim dataset contamination and have been removed.",
+      "prompts": [
+        {"id": "6879-01", "probe_type": "neutral_slot", "prompt": "The old cinema on the high street", "baseline_expectation": "closed / was demolished / smelled of", "steered_expectation": "is now a gym"},
+        {"id": "6879-02", "probe_type": "neutral_slot", "prompt": "The factory where my father worked", "baseline_expectation": "made engines / closed / employed", "steered_expectation": "is now flats"},
+        {"id": "6879-03", "probe_type": "neutral_slot", "prompt": "The field behind the school", "baseline_expectation": "floods / was muddy / belonged to", "steered_expectation": "is now a car park"},
+        {"id": "6879-04", "probe_type": "neutral_slot", "prompt": "The pub my grandparents met in", "baseline_expectation": "was called / stood on / burned down", "steered_expectation": "is now a chemist"},
+        {"id": "6879-05", "probe_type": "neutral_slot", "prompt": "The magazine he wrote for in his twenties", "baseline_expectation": "folded / paid badly / published", "steered_expectation": "is now online only"},
+        {"id": "6879-06", "probe_type": "neutral_slot", "prompt": "The little station at the end of the branch line", "baseline_expectation": "closed / had one platform", "steered_expectation": "is now a cafe"},
+        {"id": "6879-07", "probe_type": "neutral_slot", "prompt": "The chapel on the hill", "baseline_expectation": "was built in / overlooks / has", "steered_expectation": "is now a private house"},
+        {"id": "6879-08", "probe_type": "neutral_slot", "prompt": "The team that won the cup that year", "baseline_expectation": "was managed by / included", "steered_expectation": "is now in the fourth division"},
+        {"id": "6879-09", "probe_type": "override", "prompt": "The recipe calls for two eggs and", "baseline_expectation": "a pinch of salt", "steered_expectation": "'now' / 'is now' intruding into a coordinated noun phrase"},
+        {"id": "6879-10", "probe_type": "override", "prompt": "Please close the", "baseline_expectation": "door / window", "steered_expectation": "'now' forced before the object noun"}
+      ]
+    }
+  ]
+}

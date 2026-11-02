@@ -8,7 +8,7 @@ Reads:
 and prints:
   - ASCII bar chart of per-dataset Top-k F1 (%)
   - Per-layer reconstruction metrics table (MSE / explained variance / cossim)
-  - A LaTeX table row matching fetch_run_metrics_table1.py
+  - A LaTeX table row
 
 Usage:
     python fetch_local_run_metrics.py gpt2_m0
@@ -27,7 +27,7 @@ from typing import Any
 import numpy as np
 
 # Map SAEBench dataset_name (with "_results" suffix stripped) to the short
-# labels used in the original fetch_run_metrics_table1.py script.
+# labels used as column headers in the LaTeX table.
 DATASET_LABEL_MAP: dict[str, str] = {
     "Helsinki-NLP/europarl": "europarl",
     "canrager/amazon_reviews_mcauley_1and5_sentiment": "amazon_1and5_sentiment",

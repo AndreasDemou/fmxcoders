@@ -1,14 +1,10 @@
-source /nvme/h/ademou/envs/poly_env/bin/activate
-export PYTHONNOUSERSITE=1
-export PYTHONPATH="/nvme/h/ademou/envs/poly_env:/nvme/h/ademou/data_aiml/ademou/MN5/code/SAEBench"
-export HF_HUB_CACHE="/nvme/h/ademou/data_aiml/ademou/MN5/hf_cache/hub"
-export HF_DATASETS_CACHE="/nvme/h/ademou/data_aiml/ademou/MN5/hf_cache/datasets"
-export HF_HUB_OFFLINE=1
-export HF_DATASETS_OFFLINE=1
-export TRANSFORMERS_OFFLINE=1
-export PYTHONUNBUFFERED=1
+#!/bin/bash
+# Run from the repository root (under SLURM: submit from the repo root).
+cd "${SLURM_SUBMIT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
+if [ ! -f env.sh ]; then echo "env.sh not found: cp env.example.sh env.sh and edit it" >&2; exit 1; fi
+source ./env.sh
 
-CKPT=/nvme/h/ademou/data_aiml/ademou/MN5/checkpoints/gemma2-2b_m0_05_r32-12-545/final_500002816
+CKPT=$CKPT_ROOT/gemma2-2b_m0_05_r32-12-545/final_500002816
 RUN=gemma2-2b_m0_05_r32-12-545
 
 # MEANING-READOUT SHOWCASE for the high-coherence latents: insert each feature ONCE

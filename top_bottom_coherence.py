@@ -1,17 +1,51 @@
-"""Print the 20 highest- and 20 lowest-coherence latents from the masked TR run,
+"""Print the N highest- and N lowest-coherence latents of a crosscoder run,
 along with the tokens each one fires on (and their activations) from the
-matching feature_analysis pivot file."""
+matching feature_analysis pivot file.
 
+Inputs (produced by eval_mask_coherence.py, eval_norm_coherence.py and
+extract_token_features*.py) are looked up by run name:
+    coherence_results/<run>/mask_zero/per_latent_metrics.csv
+    coherence_results/<run>/norm_decoder/per_latent_metrics.csv   (optional)
+    eval_results/<run>/feature_analysis/token_features_pivot.json
+
+Writes top_bottom_coherence_<run>.json next to this script, which
+eval_feature_steering.py / gen_feature_steering.py read via --contexts_from.
+
+Usage:
+    python top_bottom_coherence.py --run_name gemma2-2b_m0_05_r32-12-545
+"""
+
+import argparse
 import csv
 import json
 from collections import Counter
 from pathlib import Path
 
-CSV_PATH = Path("coherence_results/gemma2-2b_m0_05_r32-12-545/mask_zero/per_latent_metrics.csv")
-NORM_CSV_PATH = Path("coherence_results/gemma2-2b_m0_05_r32-12-545/norm_decoder/per_latent_metrics.csv")
-PIVOT_PATH = Path("eval_results/gemma2-2b_m0_05_r32-12-545/feature_analysis/token_features_pivot.json")
+DEFAULT_RUN = "gemma2-2b_m0_05_r32-12-545"   # run used for the paper's steering figures
+
+# Set from the command line in main(); see _set_paths().
+CSV_PATH = Path()
+NORM_CSV_PATH = Path()
+PIVOT_PATH = Path()
 N = 20
 MIN_EXAMPLES = 10   # keep latents with strictly MORE than this many examples
+
+
+def _set_paths(run_name: str) -> None:
+    global CSV_PATH, NORM_CSV_PATH, PIVOT_PATH
+    CSV_PATH = Path("coherence_results") / run_name / "mask_zero" / "per_latent_metrics.csv"
+    NORM_CSV_PATH = Path("coherence_results") / run_name / "norm_decoder" / "per_latent_metrics.csv"
+    PIVOT_PATH = Path("eval_results") / run_name / "feature_analysis" / "token_features_pivot.json"
+
+
+def _parse_args() -> argparse.Namespace:
+    p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    p.add_argument("--run_name", default=DEFAULT_RUN,
+                   help=f"Run (checkpoint folder) name under coherence_results/ and eval_results/ (default: {DEFAULT_RUN}).")
+    p.add_argument("--n", type=int, default=N, help=f"How many top / bottom latents to report (default: {N}).")
+    p.add_argument("--min_examples", type=int, default=MIN_EXAMPLES,
+                   help=f"Keep only latents with MORE than this many pivot examples (default: {MIN_EXAMPLES}).")
+    return p.parse_args()
 
 
 def load_coherence(path: Path) -> list[tuple[str, float]]:
@@ -90,6 +124,10 @@ def print_latent_block(block: dict) -> None:
 
 
 def main() -> None:
+    global N, MIN_EXAMPLES
+    args = _parse_args()
+    _set_paths(args.run_name)
+    N, MIN_EXAMPLES = args.n, args.min_examples
     rows = load_coherence(CSV_PATH)
     if not rows:
         print(f"No coherence rows found in {CSV_PATH}")

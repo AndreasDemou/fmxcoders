@@ -187,8 +187,8 @@ ruamel.yaml==0.18.17
 ruamel.yaml.clib==0.2.15
 ruff==0.7.4
 s3transfer==0.16.0
--e git+https://github.com/adamkarvonen/SAEBench.git@fbc649fd2c336f5a383ff6840ecac740d485f3d6#egg=sae_bench
--e git+https://github.com/decoderesearch/SAELens.git@bd44804c64ff0d2d920fb0896635f9d9830dafab#egg=sae_lens
+# sae_lens and sae_bench are NOT pinned here: install this repo's forks instead
+# (they contain the crosscoder code):  pip install -e . && pip install -e ./SAEBench
 safetensors==0.7.0
 schedulefree==1.4.1
 scikit-learn==1.7.2

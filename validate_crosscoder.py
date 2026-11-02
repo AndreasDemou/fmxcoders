@@ -15,7 +15,6 @@ Runs a short training loop on a small model (pythia-70m) and checks:
 10. Checkpoint save/load round-trips correctly
 
 Usage:
-    source load_modules.sh
     python validate_crosscoder.py
 """
 

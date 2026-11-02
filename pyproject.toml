@@ -1,13 +1,20 @@
 [tool.poetry]
 name = "sae-lens"
 version = "6.22.3"
-description = "Training and Analyzing Sparse Autoencoders (SAEs)"
-authors = ["Joseph Bloom"]
+description = "SAELens fork with factorized masked crosscoders (fmxcoders, NeurIPS 2026)"
+authors = [
+    "Joseph Bloom",  # original SAELens author
+    "Andreas D. Demou",
+    "Panagiotis Koromilas",
+    "James Oldfield",
+    "Yannis Panagakis",
+    "Mihalis A. Nicolaou",
+]
 readme = "README.md"
 packages = [{ include = "sae_lens" }]
 include = ["pretrained_saes.yaml"]
-repository = "https://github.com/decoderesearch/SAELens"
-homepage = "https://decoderesearch.github.io/SAELens"
+repository = "https://github.com/AndreasDemou/fmxcoders"
+homepage = "https://github.com/AndreasDemou/fmxcoders"  # fork of https://github.com/decoderesearch/SAELens
 license = "MIT"
 keywords = [
     "deep-learning",
@@ -33,6 +40,7 @@ pyyaml = "^6.0.1"
 typing-extensions = "^4.10.0"
 simple-parsing = "^0.1.6"
 tenacity = ">=9.0.0"
+wandb = ">=0.16.0"  # used by train_and_saebench.py
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.2"
