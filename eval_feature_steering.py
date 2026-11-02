@@ -21,7 +21,7 @@ pushed to a comparable multiple of its own natural "on" level.
 Direction semantics (--delta_mode):
   The crosscoder reads a CUMULATIVE residual stream (hook_resid_post), so the
   raw d_{i,L} is a snapshot of the feature's accumulated write, largely shared
-  across layers for persistent features (see check_delta_persistence.py).
+  across layers for persistent features.
   * increment (default): steer with d_hat_0 = d_0 and d_hat_L = d_L - d_{L-1}.
     --per_layer then injects only the MARGINAL write appearing at layer L
     (block 9's increment = the whole contribution inherited at the span start),

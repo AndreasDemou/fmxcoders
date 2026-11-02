@@ -1,14 +1,10 @@
-source /nvme/h/ademou/envs/poly_env/bin/activate
-export PYTHONNOUSERSITE=1
-export PYTHONPATH="/nvme/h/ademou/envs/poly_env:/nvme/h/ademou/data_aiml/ademou/MN5/code/SAEBench"
-export HF_HUB_CACHE="/nvme/h/ademou/data_aiml/ademou/MN5/hf_cache/hub"
-export HF_DATASETS_CACHE="/nvme/h/ademou/data_aiml/ademou/MN5/hf_cache/datasets"
-export HF_HUB_OFFLINE=1
-export HF_DATASETS_OFFLINE=1
-export TRANSFORMERS_OFFLINE=1
-export PYTHONUNBUFFERED=1
+#!/bin/bash
+# Run from the repository root (under SLURM: submit from the repo root).
+cd "${SLURM_SUBMIT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
+if [ ! -f env.sh ]; then echo "env.sh not found: cp env.example.sh env.sh and edit it" >&2; exit 1; fi
+source ./env.sh
 
-CKPT=/nvme/h/ademou/data_aiml/ademou/MN5/checkpoints/gemma2-2b_m0_05_r32-12-545/final_500002816
+CKPT=$CKPT_ROOT/gemma2-2b_m0_05_r32-12-545/final_500002816
 RUN=gemma2-2b_m0_05_r32-12-545
 
 # Generate steered TEXT continuations for the hand-authored probe prompts in
@@ -56,9 +52,9 @@ python gen_feature_steering.py \
     --checkpoint_path "$CKPT" \
     --contexts_from "top_bottom_coherence_${RUN}.json" \
     --prompts_from steering_prompts.json \
-    --all_layers --delta_mode increment --steer_position all --coeffs 0.5,1,2,4,8 \
+    --all_layers --delta_mode increment --steer_positions all --coeffs 0.5,1,2,4,8 \
     --max_new_tokens 40 \
     --output_dir "steering_results/${RUN}/gen_all" \
     2>&1 | tee "gen_steering_${RUN}.log"
 
-    #--all_layers --delta_mode increment --steer_position first --coeffs 2,4,8,16 \
+    #--all_layers --delta_mode increment --steer_positions first --coeffs 2,4,8,16 \

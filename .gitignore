@@ -13,3 +13,5 @@ output/
 checkpoints*/
 .claude/
 *.json
+!steering_prompts.json
+env.sh

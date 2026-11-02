@@ -77,10 +77,11 @@ class CrosscoderConfigMixin:
     use_cross_fact: enable tensor factorization of the 3D crosscoder weights
                     (W_enc, W_dec). Factorized weights replace the full 3D
                     tensors with a low-parameter decomposition.
-    cross_fact_type: factorization type. Currently supports "CP" (CANDECOMP /
-                     PARAFAC). Future: "TR" (Tensor Ring).
-    cross_fact_ranks: rank R of the factorization (applies to both encoder
-                      and decoder).
+    cross_fact_type: factorization type: "CP" (CANDECOMP / PARAFAC) or "TR"
+                     (Tensor Ring).
+    cross_fact_ranks: rank(s) of the factorization (applies to both encoder
+                      and decoder). CP takes one rank R; TR takes three ranks
+                      (r1, r2, r3), see below.
     """
 
     n_layers: int = 1

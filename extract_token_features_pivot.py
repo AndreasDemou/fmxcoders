@@ -31,8 +31,8 @@ Output format:
     }
 
 Usage:
-    python pivot_features.py activations.json
-    python pivot_features.py activations.json -k 50
+    python extract_token_features_pivot.py activations.json
+    python extract_token_features_pivot.py activations.json -k 50
 """
 
 import argparse

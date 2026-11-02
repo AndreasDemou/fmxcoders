@@ -1,25 +1,19 @@
 #!/bin/bash
 #SBATCH --job-name=CrossRecon
-#SBATCH --account=aiml
 #SBATCH --nodes=1
 #SBATCH --gpus-per-node=1
 #SBATCH --cpus-per-task=16
 #SBATCH --output=job.%j.out
 #SBATCH --error=job.%j.err
-#SBATCH --partition=rtx
 #SBATCH --time=24:00:00
+# Account/partition are cluster-specific: sbatch -A <account> -p <partition> run_eval_cross_reconstruction.sh
 
-source /nvme/h/ademou/envs/poly_env/bin/activate
-export PYTHONNOUSERSITE=1
-export PYTHONPATH="/nvme/h/ademou/envs/poly_env:/nvme/h/ademou/data_aiml/ademou/MN5/code/SAEBench"
-export HF_HUB_CACHE="/nvme/h/ademou/data_aiml/ademou/MN5/hf_cache/hub"
-export HF_DATASETS_CACHE="/nvme/h/ademou/data_aiml/ademou/MN5/hf_cache/datasets"
-export HF_HUB_OFFLINE=1
-export HF_DATASETS_OFFLINE=1
-export TRANSFORMERS_OFFLINE=1
-export PYTHONUNBUFFERED=1
+# Run from the repository root (under SLURM: submit from the repo root).
+cd "${SLURM_SUBMIT_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
+if [ ! -f env.sh ]; then echo "env.sh not found: cp env.example.sh env.sh and edit it" >&2; exit 1; fi
+source ./env.sh
 
-BASE=/nvme/h/ademou/data_aiml/ademou/MN5/checkpoints
+BASE="$CKPT_ROOT"
 
 RUNS=(
     pythia410m_topk
@@ -68,7 +62,7 @@ for name in "${RUNS[@]}"; do
 done
 
 
-#for ckpt in /gpfs/scratch/ehpc289/NeurIPS2026/checkpoints/pythia410m_m*_r*matched/final_*; do
+#for ckpt in $CKPT_ROOT/pythia410m_m*_r*matched/final_*; do
 #    name=$(basename $(dirname "$ckpt"))
 #    python eval_crosscoder_reconstruction.py \
 #        --checkpoint_path "$ckpt" \

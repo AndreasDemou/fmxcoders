@@ -3,7 +3,7 @@
 train_and_saebench.py
 
 End-to-end script:
-1) Train an SAE with the same behavior as your train_sae.py (SAELens).
+1) Train an SAE or crosscoder with SAELens (this repo's fork).
 2) Run selected SAEBench evaluations (no AutoInterp):
    - L0 / Loss Recovered
    - Sparse Probing
@@ -191,6 +191,25 @@ from sae_lens import (
     SAE,
     TrainingSAE,
 )
+
+# Make the SAEBench fork bundled with this repo importable even if it has not been
+# pip-installed. It goes first on sys.path so it takes precedence over an upstream
+# sae_bench, which lacks crosscoder support. --saebench_repo_dir is read here, ahead
+# of the main parser, because SAEBench is imported at module load time.
+def _resolve_saebench_dir() -> Optional[Path]:
+    pre = argparse.ArgumentParser(add_help=False)
+    pre.add_argument("--saebench_repo_dir", default="SAEBench")
+    raw = Path(pre.parse_known_args()[0].saebench_repo_dir).expanduser()
+    candidates = [raw] if raw.is_absolute() else [Path.cwd() / raw, Path(__file__).resolve().parent / raw]
+    for c in candidates:
+        if (c / "sae_bench").is_dir():
+            return c.resolve()
+    return None
+
+
+_SAEBENCH_DIR = _resolve_saebench_dir()
+if _SAEBENCH_DIR is not None and str(_SAEBENCH_DIR) not in sys.path:
+    sys.path.insert(0, str(_SAEBENCH_DIR))
 
 # SAEBench imports for direct API usage
 try:
@@ -454,7 +473,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument(
         "--saebench_repo_dir",
         default="SAEBench",
-        help="Path to the cloned SAEBench repo (relative or absolute).",
+        help="Path to the SAEBench repo to import sae_bench from (default: the fork bundled in ./SAEBench).",
     )
     p.add_argument(
         "--saebench_model_name",
